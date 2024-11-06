@@ -1,0 +1,193 @@
+#include<iostream>
+#include<string>
+using namespace std;
+
+class movie {
+public:
+    int availableseats;
+    string title;
+    movie(string t, int seats) : title(t), availableseats(seats) {}
+};
+class booking {
+public:
+    int numberoftickets;
+    string fooditems;
+    string movietitle;
+    booking(string title, int tickets, string foods = "") 
+        : movietitle(title), numberoftickets(tickets), fooditems(foods) {}
+};
+class movienode {
+public:
+    movie data;// instance of the movie class
+    movienode* next;// pointer to the next movienode
+    movienode(movie m) : data(m), next(nullptr) {} //initialize data and next
+};
+class bookingnode {
+public:
+    booking data;// instance of the booking class
+    bookingnode* next; // pointer to the next bookingnode
+    bookingnode(booking b) : data(b), next(nullptr) {} //initialize data and next
+};
+class ticketbookingsystem {
+private:
+    movienode* moviehead;
+    bookingnode* bookinghead;
+public:
+    ticketbookingsystem() : moviehead(nullptr), bookinghead(nullptr) {
+        // Adding movies 
+        addmovie("Jigra", 50);
+        addmovie("Singham Return", 30);
+        addmovie("Bhool Bhuliya 3", 20);
+    }
+    void addmovie(string title, int seats) {
+        movienode* newmovie = new movienode(movie(title, seats));
+        newmovie->next = moviehead;
+        moviehead = newmovie;
+    }
+    void displaymovies() {
+        cout << "Available Movies : " << endl;
+        movienode* current = moviehead;
+        int index = 1;
+        while (current) {
+            cout << index++ << ") " << current->data.title << " (Available Seats: " << current->data.availableseats << ")" << endl;
+            current = current->next;
+        }
+    }
+    void displayfoodoptions() {
+        cout << "Available Food Items : " << endl;
+        cout << "1. Popcorn" << endl;
+        cout << "2. Soda" << endl;
+        cout << "3. Nachos" << endl;
+        cout << "4. Candy" << endl;
+    }
+    void bookticket() {
+        displaymovies();
+        int moviechoice;
+        cout << "Select a movie by number : ";
+        cin >> moviechoice;
+        movienode* selectedmovie = getmoviebyindex(moviechoice);
+        if (!selectedmovie) {
+            cout << "Error" << endl;
+            return;
+        }
+        cout << "Enter number of tickets to book (Available: " << selectedmovie->data.availableseats << ") : ";
+        int tickets;
+        cin >> tickets;
+        if (tickets < 1 || tickets > selectedmovie->data.availableseats) {
+            cout << "Invalid Number of Tickets!!" << endl;
+            return;
+        }
+        displayfoodoptions();
+        cout << "Select food items (comma-separated for multiple items) : ";
+        string foodchoice;
+        cin.ignore(); // ignore newline character from previous input
+        getline(cin, foodchoice);
+        // book the tickets
+        selectedmovie->data.availableseats -= tickets;
+        booking newBooking(selectedmovie->data.title, tickets, foodchoice);
+        bookingnode* newbooking = new bookingnode(newBooking);
+        newbooking->next = bookinghead;
+        bookinghead = newbooking;
+        cout << "Successfully booked " << tickets << " tickets for " << selectedmovie->data.title << endl;
+        cout << "Food Items Ordered : " << foodchoice << endl;
+    }
+    movienode* getmoviebyindex(int index) {
+        movienode* current = moviehead;
+        int count = 1;
+        while (current) {
+            if (count == index) return current;
+            count++;
+            current = current->next;
+        }
+        return nullptr;
+    }
+    void viewbookings() {
+        if (!bookinghead) {
+            cout << "No Booking : " << endl;
+            return;
+        }
+        cout << "Your Bookings: " << endl;
+        bookingnode* current = bookinghead;
+        int index = 1;
+        while (current) {
+            cout << index++ << ") " << current->data.movietitle << " - " << current->data.numberoftickets << " tickets";
+            if (!current->data.fooditems.empty()) {
+                cout << "  Food Ordered: " << current->data.fooditems;
+            }
+            cout << endl;
+            current = current->next;
+        }
+    }
+    void cancelbooking() {
+        if (!bookinghead) {  // correct null check
+            cout << "No bookings found!" << endl;
+            return;
+        }
+        cout << "Your Bookings: " << endl;
+        bookingnode* current = bookinghead;
+        int index = 1;
+        while (current) {
+            cout << index++ << ") " << current->data.movietitle << " - " << current->data.numberoftickets << " tickets" << endl;
+            current = current->next;
+        }
+        cout << "Select a booking to cancel by number: ";
+        int choice;
+        cin >> choice;
+
+        if (choice < 1 || choice >= index) {
+            cout << "Invalid choice!" << endl;
+            return;
+        }
+        bookingnode* temp = bookinghead;
+        bookingnode* prev = nullptr;
+        for (int i = 1; i < choice; ++i) {
+            prev = temp;
+            temp = temp->next;
+        }
+        if (prev) {
+            prev->next = temp->next;
+        } else {
+            bookinghead = temp->next;
+        }
+        movienode* movietoupdate = getmoviebytitle(temp->data.movietitle);
+        if (movietoupdate) {
+            movietoupdate->data.availableseats += temp->data.numberoftickets;
+        }
+        delete temp; 
+        cout << "Booking canceled successfully!" << endl;
+    }
+    movienode* getmoviebytitle(const string& title) {
+        movienode* current = moviehead;
+        while (current) {
+            if (current->data.title == title) return current;
+            current = current->next;
+        }
+        return nullptr;
+    }
+    void start() {
+        while (true) {
+            cout << "--- Movie Ticket Booking System ---" << endl;
+            cout << "1. View Movies" << endl;
+            cout << "2. Book Ticket" << endl;
+            cout << "3. View Bookings" << endl;
+            cout << "4. Cancel Booking" << endl;
+            cout << "5. Exit" << endl;
+            cout << "Select an option: ";
+            int choice;
+            cin >> choice;
+            switch (choice) {
+                case 1: displaymovies(); break;
+                case 2: bookticket(); break;
+                case 3: viewbookings(); break;
+                case 4: cancelbooking(); break;
+                case 5: cout << "Thank you for using the system!" << endl; return;
+                default: cout << "Invalid choice!" << endl;
+            }
+        }
+    }
+};
+int main() {
+    ticketbookingsystem book;
+    book.start();
+    return 0;
+}
